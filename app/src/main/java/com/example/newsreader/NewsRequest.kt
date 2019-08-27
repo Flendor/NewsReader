@@ -10,7 +10,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.stream.Collectors
 
-class NewsRequest: AsyncTask<String, Void, String>() {
+class NewsRequest (private val database: Database): AsyncTask<String, Void, String>() {
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     override fun doInBackground(vararg urls: String): String? {
@@ -35,12 +35,12 @@ class NewsRequest: AsyncTask<String, Void, String>() {
             val newsJsonObject = JSONObject(s)
             val newsTitle: String = newsJsonObject.getString("title")
             val newsUrl: String = newsJsonObject.getString("url")
-            val stmt = MainActivity.getMyDatabase().compileStatement("INSERT INTO news(title, url) VALUES (?, ?)")
+            val stmt = database.getMyDatabase().compileStatement("INSERT INTO news(title, url) VALUES (?, ?)")
             stmt.bindString(1, newsTitle)
             stmt.bindString(2, newsUrl)
             stmt.execute()
-            MainActivity.getTitles().add(newsTitle)
-            MainActivity.getUrls().add(newsUrl)
+            AllData.getTitles().add(newsTitle)
+            AllData.getUrls().add(newsUrl)
             MainActivity.getNewsAdapter().notifyDataSetChanged()
         }
         catch (e: Exception) {

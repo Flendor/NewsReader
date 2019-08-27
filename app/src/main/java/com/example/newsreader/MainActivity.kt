@@ -1,8 +1,6 @@
 package com.example.newsreader
 
 import android.content.Context
-import android.database.Cursor
-import android.database.sqlite.SQLiteDatabase
 import android.graphics.Color
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -22,27 +20,13 @@ class MainActivity : AppCompatActivity() {
     private val topNewsUrl: String = "https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty"
     private val newUrlStart: String = "https://hacker-news.firebaseio.com/v0/item/"
     private val newUrlEnd: String = ".json?print=pretty"
+    private lateinit var database: Database
 
     companion object {
-        private lateinit var myDatabase: SQLiteDatabase
         private lateinit var newsAdapter: ArrayAdapter<String>
-        private val titles: ArrayList<String> = arrayListOf()
-        private val urls: ArrayList<String> = arrayListOf()
-
-        fun getMyDatabase(): SQLiteDatabase {
-            return myDatabase
-        }
 
         fun getNewsAdapter(): ArrayAdapter<String> {
             return newsAdapter
-        }
-
-        fun getTitles(): ArrayList<String> {
-            return titles
-        }
-
-        fun getUrls(): ArrayList<String> {
-            return urls
         }
     }
 
@@ -65,7 +49,7 @@ class MainActivity : AppCompatActivity() {
     private fun requestNews(ids: ArrayList<String>) {
         for (id: String in ids) {
             try {
-                val dataGetter = NewsRequest()
+                val dataGetter = NewsRequest(database)
                 dataGetter.execute(newUrlStart + id + newUrlEnd)
             }
             catch(e: Exception) {
@@ -101,9 +85,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         try {
-            myDatabase = this@MainActivity.openOrCreateDatabase("NewsReader", Context.MODE_PRIVATE, null)
-            myDatabase.execSQL("DROP TABLE IF EXISTS news")
-            myDatabase.execSQL("CREATE TABLE IF NOT EXISTS news (title VARCHAR, url VARCHAR, id INT(4) PRIMARY KEY)")
+            database = Database(this)
+            database.getMyDatabase().execSQL("DROP TABLE IF EXISTS news")
+            database.getMyDatabase().execSQL("CREATE TABLE IF NOT EXISTS news (title VARCHAR, url VARCHAR, id INT(4) PRIMARY KEY)")
 
             requestNews(requestIds())
             /*val c: Cursor = myDatabase.rawQuery("SELECT * FROM news", null)
@@ -119,7 +103,7 @@ class MainActivity : AppCompatActivity() {
             e.printStackTrace()
         }
 
-        newsAdapter = object : ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, titles) {
+        newsAdapter = object : ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, AllData.getTitles()) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val view = super.getView(position, convertView, parent)
                 val tv = view.findViewById<View>(android.R.id.text1) as TextView
@@ -128,12 +112,13 @@ class MainActivity : AppCompatActivity() {
                 return view
             }
         }
+
         newsList.adapter = newsAdapter
 
         newsList.setOnItemClickListener { _, _, position, _ ->
             newsList.visibility = INVISIBLE
             newsShow.visibility = VISIBLE
-            openWebPage(urls[position])
+            openWebPage(AllData.getUrls()[position])
         }
     }
 }
